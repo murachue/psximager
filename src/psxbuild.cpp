@@ -487,19 +487,19 @@ static void parseVolume(ifstream & catalogFile, Catalog & cat)
 		} else if (boost::regex_match(line, m, copyrightFileIdSpec)) {
 
 			// Copyright file ID specification
-			checkDString(m[1], "copyright_file_id");
+			checkFullFileName(m[1], "copyright_file_id");
 			cat.copyrightFileID = m[1];
 
 		} else if (boost::regex_match(line, m, abstractFileIdSpec)) {
 
 			// Abstract file ID specification
-			checkDString(m[1], "abstract_file_id");
+			checkFullFileName(m[1], "abstract_file_id");
 			cat.abstractFileID = m[1];
 
 		} else if (boost::regex_match(line, m, bibliographicFileIdSpec)) {
 
 			// Bibliographic file ID specification
-			checkDString(m[1], "bibliographic_file_id");
+			checkFullFileName(m[1], "bibliographic_file_id");
 			cat.bibliographicFileID = m[1];
 
 		} else if (boost::regex_match(line, m, creationDateSpec)) {
