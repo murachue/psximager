@@ -356,6 +356,19 @@ static void checkFileName(const string & s, const string & description)
 }
 
 
+// Check that the given string is a valid full file name.
+// TODO: should check also for correct position of '.' and ';', and only digits for version field
+static void checkFullFileName(const string & s, const string & description)
+{
+	for (size_t i = 0; i < s.length(); ++i) {
+		char c = s[i];
+		if (!iso9660_is_dchar(c) && c != '.' && c != ';') {
+			throw runtime_error((format("Illegal character '%1%' in %2% \"%3%\"") % c % description % s).str());
+		}
+	}
+}
+
+
 // Check that the given string represents a valid sector number and
 // convert it to an integer. Returns 0 if the string is empty;
 static uint32_t checkLBN(const string & s, const string & itemName)
@@ -545,8 +558,8 @@ static DirNode * parseDir(ifstream & catalogFile, Catalog & cat, const string & 
 			throw runtime_error((format("Syntax error in catalog file: unterminated directory section \"%1%\"") % dirName).str());
 		}
 
-		static const boost::regex fileSpec("file\\s*(\\S+)(?:\\s*@(\\d+))?");
-		static const boost::regex xaFileSpec("xafile\\s*(\\S+)(?:\\s*@(\\d+))?");
+		static const boost::regex fileSpec("file(!?)\\s*(\\S+)(?:\\s*@(\\d+))?");
+		static const boost::regex xaFileSpec("xafile(!?)\\s*(\\S+)(?:\\s*@(\\d+))?");
 		static const boost::regex dirStart("dir\\s*(\\S+)(?:\\s*@(\\d+))?\\s*\\{");
 		boost::smatch m;
 
@@ -558,23 +571,33 @@ static DirNode * parseDir(ifstream & catalogFile, Catalog & cat, const string & 
 		} else if (boost::regex_match(line, m, fileSpec)) {
 
 			// File specification
-			string fileName = m[1];
-			checkFileName(fileName, "file name");
+			bool addVersion = m[1] == "";
+			string fileName = m[2];
+			if (addVersion) {
+				checkFileName(fileName, "file name");
+			} else {
+				checkFullFileName(fileName, "file name");
+			}
 
-			uint32_t startSector = checkLBN(m[2], fileName);
+			uint32_t startSector = checkLBN(m[3], fileName);
 
-			FileNode * file = new FileNode(fileName + ";1", path / fileName, dir, startSector);
+			FileNode * file = new FileNode(fileName + (addVersion ? ";1" : ""), path / fileName, dir, startSector);
 			dir->children.push_back(file);
 
 		} else if (boost::regex_match(line, m, xaFileSpec)) {
 
 			// XA file specification
-			string fileName = m[1];
-			checkFileName(fileName, "file name");
+			bool addVersion = m[1] == "";
+			string fileName = m[2];
+			if (addVersion) {
+				checkFileName(fileName, "file name");
+			} else {
+				checkFullFileName(fileName, "file name");
+			}
 
-			uint32_t startSector = checkLBN(m[2], fileName);
+			uint32_t startSector = checkLBN(m[3], fileName);
 
-			FileNode * file = new FileNode(fileName + ";1", path / fileName, dir, startSector, true);
+			FileNode * file = new FileNode(fileName + (addVersion ? ";1" : ""), path / fileName, dir, startSector, true);
 			dir->children.push_back(file);
 
 		} else if (boost::regex_match(line, m, dirStart)) {
